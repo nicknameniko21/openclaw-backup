@@ -17,6 +17,7 @@ from trading.strategies.mean_reversion import MeanReversionStrategy
 from trading.strategies.trend_following import TrendFollowingStrategy
 from trading.strategies.multi_timeframe import MultiTimeframeStrategy
 from trading.strategies.ensemble import StrategyEnsemble
+from trading.strategies.ml_strategy import MLStrategy
 from trading.risk.manager import RiskManager, RiskConfig, RiskLevel
 from execution.exchanges.binance import BinanceConnector
 from backtest import run_backtest
@@ -101,6 +102,10 @@ def create_strategy(strategy_name: str, config: Dict):
     elif strategy_name == 'ensemble':
         strategy_config = strategies_config.get('ensemble', {})
         return StrategyEnsemble(strategy_config)
+
+    elif strategy_name == 'ml':
+        strategy_config = strategies_config.get('ml', {})
+        return MLStrategy(strategy_config)
 
     else:
         raise ValueError(f"Unknown strategy: {strategy_name}")
@@ -313,7 +318,7 @@ Examples:
     # Backtest command
     backtest_parser = subparsers.add_parser('backtest', help='Run backtest on historical data')
     backtest_parser.add_argument('--strategy', type=str, default='breakout',
-                                choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble'],
+                                choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble', 'ml'],
                                 help='Trading strategy to use')
     backtest_parser.add_argument('--symbol', type=str, default='BTC/USDT',
                                 help='Trading pair (e.g., BTC/USDT)')
@@ -329,7 +334,7 @@ Examples:
     # Paper trading command
     paper_parser = subparsers.add_parser('paper', help='Run paper trading simulation')
     paper_parser.add_argument('--strategy', type=str, default='breakout',
-                             choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble'],
+                             choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble', 'ml'],
                              help='Trading strategy to use')
     paper_parser.add_argument('--symbol', type=str, default='BTC/USDT',
                              help='Trading pair')
@@ -339,7 +344,7 @@ Examples:
     # Live trading command
     live_parser = subparsers.add_parser('live', help='Run live trading (REAL MONEY)')
     live_parser.add_argument('--strategy', type=str, default='breakout',
-                            choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble'],
+                            choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble', 'ml'],
                             help='Trading strategy to use')
     live_parser.add_argument('--symbol', type=str, default='BTC/USDT',
                             help='Trading pair')

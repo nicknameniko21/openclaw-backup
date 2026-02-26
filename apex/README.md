@@ -12,6 +12,9 @@ pip install -r apex/requirements.txt
 # Check system status
 python apex/main.py status
 
+# Run backtest with ML strategy (requires more data)
+python apex/main.py backtest --strategy ml --days 90
+
 # Run backtest with trend following
 python apex/main.py backtest --strategy trend_following --days 30
 
@@ -203,6 +206,14 @@ export BINANCE_SECRET="your_secret"
 - **Best for:** Reducing false signals
 - **Config:** `min_consensus`, sub-strategy settings
 
+### 6. ML Strategy (Machine Learning)
+- **Type:** AI-powered prediction
+- **Logic:** Uses Random Forest to predict price movements based on 50+ features
+- **Best for:** Adapting to changing market conditions
+- **Config:** `prediction_threshold`, `min_confidence`, `n_estimators`, `use_regime_filter`
+- **Features:** Price returns, moving averages, volatility, RSI, MACD, Bollinger Bands, volume patterns, candlestick patterns
+- **Auto-trains:** Yes, on first run with sufficient data (default: 500 samples)
+
 ---
 
 ## Technical Indicators
@@ -292,11 +303,13 @@ Sharpe Ratio:    1.45
 - [x] Strategy combination/ensemble
 - [ ] Arbitrage detection
 
-### Phase 3: Machine Learning
-- [ ] Price prediction models
-- [ ] Classification models
-- [ ] Anomaly detection
-- [ ] Feature engineering
+### Phase 3: Machine Learning ✅ COMPLETE
+- [x] Price prediction models (Random Forest, Gradient Boosting)
+- [x] Classification models (up/down/neutral prediction)
+- [x] Anomaly detection (price spikes, volume spikes, regime changes)
+- [x] Feature engineering (50+ technical features)
+- [x] ML Strategy integration
+- [x] Market regime detection
 
 ### Phase 4: Execution Enhancements
 - [ ] Multiple exchange support
@@ -378,6 +391,94 @@ class MyStrategy(BaseStrategy):
 
 ---
 
+## Machine Learning Features
+
+### Feature Engineering (`apex/analysis/ml/features.py`)
+The system automatically creates 50+ features from price data:
+
+**Price Features:**
+- Returns (1d, 3d, 5d, 10d, 20d)
+- Log returns
+- Price momentum
+
+**Moving Average Features:**
+- SMA/EMA ratios (5, 10, 20, 50, 200 periods)
+- Golden cross detection
+- Price distance from MAs
+
+**Volatility Features:**
+- Rolling volatility (5d, 10d, 20d)
+- True Range / ATR
+- Volatility regime detection
+
+**Technical Indicators:**
+- RSI with oversold/overbought signals
+- MACD with crossover detection
+- Bollinger Bands with position and squeeze detection
+
+**Volume Features:**
+- Volume ratios and trends
+- Volume-price divergence
+- On-Balance Volume (OBV)
+
+**Candlestick Patterns:**
+- Doji, Hammer, Shooting Star detection
+- Bullish/Bearish engulfing patterns
+- Body size and shadow analysis
+
+### Prediction Models (`apex/analysis/ml/models.py`)
+
+**Random Forest Model:**
+- Classification (predict up/down/neutral)
+- Regression (predict future return)
+- Feature importance analysis
+- Cross-validation scoring
+
+**Gradient Boosting Model:**
+- Often more accurate than Random Forest
+- Better for capturing complex patterns
+
+**Ensemble Model:**
+- Combines multiple models
+- Weighted predictions for robustness
+
+### Anomaly Detection (`apex/analysis/ml/anomaly.py`)
+
+**Detects:**
+- Price spikes (z-score based)
+- Volume spikes
+- Volatility regime changes
+- Unusual candlestick patterns
+
+**Market Regime Detection:**
+- Strong uptrend/downtrend
+- Weak trends
+- Ranging markets
+- High volatility periods
+
+### ML Strategy Configuration
+
+```json
+{
+  "strategies": {
+    "ml": {
+      "enabled": true,
+      "min_confidence": 0.55,
+      "prediction_threshold": 0.6,
+      "n_estimators": 100,
+      "max_depth": 10,
+      "use_regime_filter": true,
+      "use_anomaly_filter": true,
+      "prediction_horizon": 5,
+      "return_threshold": 0.01,
+      "training_data_size": 500
+    }
+  }
+}
+```
+
+---
+
 *Created: February 26, 2026*
 *For: Rhuam - The Shirtless Men Army*
-*Status: Foundation Complete - Ready for Backtesting*
+*Status: Phase 3 Complete - ML Capabilities Added*

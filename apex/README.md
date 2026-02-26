@@ -12,14 +12,14 @@ pip install -r apex/requirements.txt
 # Check system status
 python apex/main.py status
 
-# Run backtest
-python apex/main.py backtest --strategy breakout --days 30
+# Run backtest with trend following
+python apex/main.py backtest --strategy trend_following --days 30
 
-# Run paper trading
-python apex/main.py paper --strategy breakout --symbol BTC/USDT
+# Run backtest with ensemble (consensus) strategy
+python apex/main.py backtest --strategy ensemble --days 60
 
-# Live trading (⚠️ REAL MONEY - requires confirmation)
-python apex/main.py live --strategy breakout --risk conservative --confirm
+# Run paper trading with multi-timeframe analysis
+python apex/main.py paper --strategy multi_timeframe --symbol ETH/USDT
 ```
 
 ---
@@ -185,6 +185,24 @@ export BINANCE_SECRET="your_secret"
 - **Best for:** Ranging markets
 - **Config:** `rsi_period`, `oversold`, `overbought`
 
+### 3. Trend Following Strategy
+- **Type:** Trend following
+- **Logic:** Uses EMA50/EMA200 crossover with ADX confirmation
+- **Best for:** Strong trending markets
+- **Config:** `fast_ema_period`, `slow_ema_period`, `adx_threshold`
+
+### 4. Multi-Timeframe Strategy
+- **Type:** Confluence analysis
+- **Logic:** Analyzes multiple timeframes for signal alignment
+- **Best for:** High-confidence entries
+- **Config:** `timeframes`, `ema_period`, `rsi_period`
+
+### 5. Ensemble Strategy
+- **Type:** Consensus-based
+- **Logic:** Combines multiple strategies, requires minimum consensus
+- **Best for:** Reducing false signals
+- **Config:** `min_consensus`, sub-strategy settings
+
 ---
 
 ## Technical Indicators
@@ -268,11 +286,11 @@ Sharpe Ratio:    1.45
 - [x] Backtesting engine
 - [x] Unified CLI interface
 
-### Phase 2: Advanced Strategies
-- [ ] Trend following strategy
+### Phase 2: Advanced Strategies ✅ COMPLETE
+- [x] Trend following strategy
+- [x] Multi-timeframe analysis
+- [x] Strategy combination/ensemble
 - [ ] Arbitrage detection
-- [ ] Multi-timeframe analysis
-- [ ] Strategy combination/ensemble
 
 ### Phase 3: Machine Learning
 - [ ] Price prediction models

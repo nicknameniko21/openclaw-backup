@@ -14,6 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from trading.strategies.breakout import BreakoutStrategy
 from trading.strategies.mean_reversion import MeanReversionStrategy
+from trading.strategies.trend_following import TrendFollowingStrategy
+from trading.strategies.multi_timeframe import MultiTimeframeStrategy
+from trading.strategies.ensemble import StrategyEnsemble
 from trading.risk.manager import RiskManager, RiskConfig, RiskLevel
 from execution.exchanges.binance import BinanceConnector
 from backtest import run_backtest
@@ -78,15 +81,27 @@ def load_config(config_path: str = 'apex/config.json') -> Dict:
 def create_strategy(strategy_name: str, config: Dict):
     """Create strategy instance by name"""
     strategies_config = config.get('strategies', {})
-    
+
     if strategy_name == 'breakout':
         strategy_config = strategies_config.get('breakout', {})
         return BreakoutStrategy(strategy_config)
-    
+
     elif strategy_name == 'mean_reversion':
         strategy_config = strategies_config.get('mean_reversion', {})
         return MeanReversionStrategy(strategy_config)
-    
+
+    elif strategy_name == 'trend_following':
+        strategy_config = strategies_config.get('trend_following', {})
+        return TrendFollowingStrategy(strategy_config)
+
+    elif strategy_name == 'multi_timeframe':
+        strategy_config = strategies_config.get('multi_timeframe', {})
+        return MultiTimeframeStrategy(strategy_config)
+
+    elif strategy_name == 'ensemble':
+        strategy_config = strategies_config.get('ensemble', {})
+        return StrategyEnsemble(strategy_config)
+
     else:
         raise ValueError(f"Unknown strategy: {strategy_name}")
 
@@ -298,7 +313,7 @@ Examples:
     # Backtest command
     backtest_parser = subparsers.add_parser('backtest', help='Run backtest on historical data')
     backtest_parser.add_argument('--strategy', type=str, default='breakout',
-                                choices=['breakout', 'mean_reversion'],
+                                choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble'],
                                 help='Trading strategy to use')
     backtest_parser.add_argument('--symbol', type=str, default='BTC/USDT',
                                 help='Trading pair (e.g., BTC/USDT)')
@@ -310,21 +325,21 @@ Examples:
                                 help='Initial capital for backtest')
     backtest_parser.add_argument('--output', type=str, default='apex/logs/backtest_results.json',
                                 help='Output file for results')
-    
+
     # Paper trading command
     paper_parser = subparsers.add_parser('paper', help='Run paper trading simulation')
     paper_parser.add_argument('--strategy', type=str, default='breakout',
-                             choices=['breakout', 'mean_reversion'],
+                             choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble'],
                              help='Trading strategy to use')
     paper_parser.add_argument('--symbol', type=str, default='BTC/USDT',
                              help='Trading pair')
     paper_parser.add_argument('--timeframe', type=str, default='1h',
                              help='Candle timeframe')
-    
+
     # Live trading command
     live_parser = subparsers.add_parser('live', help='Run live trading (REAL MONEY)')
     live_parser.add_argument('--strategy', type=str, default='breakout',
-                            choices=['breakout', 'mean_reversion'],
+                            choices=['breakout', 'mean_reversion', 'trend_following', 'multi_timeframe', 'ensemble'],
                             help='Trading strategy to use')
     live_parser.add_argument('--symbol', type=str, default='BTC/USDT',
                             help='Trading pair')

@@ -1,0 +1,24 @@
+{
+  "accounts": [
+    {
+      "email": "account1@example.com",
+      "password": "",
+      "referral": null
+    }
+  ],
+  "proxy": {
+    "enabled": false,
+    "type": "none",
+    "host": "",
+    "port": 0,
+    "username": "",
+    "password": ""
+  },
+  "settings": {
+    "headless": false,
+    "screenshots": true,
+    "delay_min": 2,
+    "delay_max": 5,
+    "daily_target": 300
+  }
+}

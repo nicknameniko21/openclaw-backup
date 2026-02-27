@@ -20,6 +20,10 @@ from trading.strategies.ensemble import StrategyEnsemble
 from trading.strategies.ml_strategy import MLStrategy
 from trading.risk.manager import RiskManager, RiskConfig, RiskLevel
 from execution.exchanges.binance import BinanceConnector
+from execution.orders.algorithms import ExecutionEngine, AlgoType
+from execution.orders.advanced import AdvancedOrderManager
+from automation.alerts import AlertManager, ScheduledTask, Scheduler, PerformanceMonitor
+from automation.dashboard import DashboardGenerator
 from backtest import run_backtest
 
 
@@ -292,6 +296,106 @@ def cmd_status(args, config: Dict):
     print('\n' + '='*60)
 
 
+def cmd_execute(args, config: Dict):
+    """Run execution algorithms (TWAP, VWAP, POV)"""
+    print(f"\n{'='*60}")
+    print(f"APEX EXECUTION ALGORITHMS - {args.algo.upper()}")
+    print('='*60)
+    
+    engine = ExecutionEngine()
+    
+    if args.algo == 'twap':
+        execution_id = engine.start_twap(
+            symbol=args.symbol,
+            side=args.side,
+            amount=args.amount,
+            duration_minutes=args.duration,
+            interval_seconds=args.interval,
+            price_limit=args.price_limit
+        )
+        print(f"\n🚀 Started TWAP execution: {execution_id}")
+        
+    elif args.algo == 'vwap':
+        execution_id = engine.start_vwap(
+            symbol=args.symbol,
+            side=args.side,
+            amount=args.amount,
+            duration_minutes=args.duration,
+            price_limit=args.price_limit,
+            participation_rate=args.participation
+        )
+        print(f"\n🚀 Started VWAP execution: {execution_id}")
+        
+    elif args.algo == 'pov':
+        execution_id = engine.start_pov(
+            symbol=args.symbol,
+            side=args.side,
+            amount=args.amount,
+            target_pov=args.target_pov
+        )
+        print(f"\n🚀 Started POV execution: {execution_id}")
+    
+    print(f"\n📊 Order Details:")
+    print(f"  Symbol: {args.symbol}")
+    print(f"  Side: {args.side}")
+    print(f"  Amount: {args.amount}")
+    print(f"  Duration: {args.duration} minutes")
+    print(f"\nUse 'status' command to monitor execution progress")
+    print('='*60)
+
+
+def cmd_advanced(args, config: Dict):
+    """Create advanced order types"""
+    print(f"\n{'='*60}")
+    print(f"APEX ADVANCED ORDERS - {args.type.upper()}")
+    print('='*60)
+    
+    manager = AdvancedOrderManager()
+    
+    if args.type == 'iceberg':
+        iceberg = manager.create_iceberg(
+            symbol=args.symbol,
+            side=args.side,
+            total_amount=args.amount,
+            display_size=args.display_size,
+            price=args.price
+        )
+        print(f"\n🧊 Created Iceberg Order:")
+        print(f"  Total Amount: {iceberg.total_amount}")
+        print(f"  Display Size: {iceberg.display_size}")
+        print(f"  Estimated Chunks: {int(iceberg.total_amount / iceberg.display_size) + 1}")
+        
+    elif args.type == 'trailing_stop':
+        trailing = manager.create_trailing_stop(
+            symbol=args.symbol,
+            side=args.side,
+            amount=args.amount,
+            trail_amount=args.trail_amount,
+            trail_percent=args.trail_percent
+        )
+        print(f"\n🎯 Created Trailing Stop:")
+        print(f"  Trail Amount: {trailing.trail_amount}")
+        print(f"  Trail Percent: {trailing.trail_percent}")
+        print(f"  Will activate on first price update")
+        
+    elif args.type == 'bracket':
+        bracket = manager.create_bracket(
+            symbol=args.symbol,
+            side=args.side,
+            amount=args.amount,
+            stop_loss=args.stop_loss,
+            take_profit=args.take_profit,
+            entry_price=args.entry_price
+        )
+        print(f"\n📐 Created Bracket Order:")
+        print(f"  Entry: {args.entry_price or 'Market'}")
+        print(f"  Stop Loss: {bracket.stop_loss_price}")
+        print(f"  Take Profit: {bracket.take_profit_price}")
+        print(f"  Risk/Reward Ratio: 1:{bracket.get_risk_reward_ratio():.2f}")
+    
+    print('='*60)
+
+
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
@@ -301,6 +405,12 @@ def main():
 Examples:
   # Run backtest
   python apex/main.py backtest --strategy breakout --days 30
+
+  # Run execution algorithm
+  python apex/main.py execute --algo twap --symbol BTC/USDT --side buy --amount 1.0 --duration 120
+
+  # Create advanced order
+  python apex/main.py advanced --type bracket --symbol BTC/USDT --side buy --amount 0.5 --stop-loss 48000 --take-profit 55000
 
   # Run paper trading
   python apex/main.py paper --strategy breakout --symbol BTC/USDT
@@ -357,6 +467,59 @@ Examples:
     # Status command
     status_parser = subparsers.add_parser('status', help='Show system status')
     
+    # Execute algorithm command
+    execute_parser = subparsers.add_parser('execute', help='Run execution algorithms (TWAP, VWAP, POV)')
+    execute_parser.add_argument('--algo', type=str, required=True,
+                               choices=['twap', 'vwap', 'pov'],
+                               help='Execution algorithm type')
+    execute_parser.add_argument('--symbol', type=str, default='BTC/USDT',
+                               help='Trading pair')
+    execute_parser.add_argument('--side', type=str, required=True,
+                               choices=['buy', 'sell'],
+                               help='Order side')
+    execute_parser.add_argument('--amount', type=float, required=True,
+                               help='Total amount to execute')
+    execute_parser.add_argument('--duration', type=int, default=60,
+                               help='Execution duration in minutes')
+    execute_parser.add_argument('--interval', type=int, default=60,
+                               help='Interval between slices (seconds, TWAP only)')
+    execute_parser.add_argument('--price-limit', type=float, default=None,
+                               help='Price limit (optional)')
+    execute_parser.add_argument('--participation', type=float, default=0.1,
+                               help='Participation rate 0-1 (VWAP only)')
+    execute_parser.add_argument('--target-pov', type=float, default=0.05,
+                               help='Target percentage of volume (POV only)')
+    
+    # Advanced orders command
+    advanced_parser = subparsers.add_parser('advanced', help='Create advanced order types')
+    advanced_parser.add_argument('--type', type=str, required=True,
+                                choices=['iceberg', 'trailing_stop', 'bracket'],
+                                help='Advanced order type')
+    advanced_parser.add_argument('--symbol', type=str, default='BTC/USDT',
+                                help='Trading pair')
+    advanced_parser.add_argument('--side', type=str, required=True,
+                                choices=['buy', 'sell'],
+                                help='Order side')
+    advanced_parser.add_argument('--amount', type=float, required=True,
+                                help='Order amount')
+    # Iceberg specific
+    advanced_parser.add_argument('--display-size', type=float, default=None,
+                                help='Visible chunk size (iceberg only)')
+    # Trailing stop specific
+    advanced_parser.add_argument('--trail-amount', type=float, default=None,
+                                help='Fixed trail amount (trailing stop only)')
+    advanced_parser.add_argument('--trail-percent', type=float, default=None,
+                                help='Percentage trail (trailing stop only)')
+    # Bracket specific
+    advanced_parser.add_argument('--entry-price', type=float, default=None,
+                                help='Entry price (bracket only, omit for market)')
+    advanced_parser.add_argument('--stop-loss', type=float, default=None,
+                                help='Stop loss price (bracket only)')
+    advanced_parser.add_argument('--take-profit', type=float, default=None,
+                                help='Take profit price (bracket only)')
+    advanced_parser.add_argument('--price', type=float, default=None,
+                                help='Limit price (iceberg only)')
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -375,6 +538,10 @@ Examples:
         cmd_live(args, config)
     elif args.command == 'status':
         cmd_status(args, config)
+    elif args.command == 'execute':
+        cmd_execute(args, config)
+    elif args.command == 'advanced':
+        cmd_advanced(args, config)
 
 
 if __name__ == '__main__':

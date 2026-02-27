@@ -86,8 +86,25 @@
     "binance": {
       "enabled": true,
       "testnet": true,
-      "rate_limit": true
+      "rate_limit": true,
+      "priority": 1
+    },
+    "coinbase": {
+      "enabled": false,
+      "sandbox": true,
+      "priority": 2
+    },
+    "kraken": {
+      "enabled": false,
+      "priority": 3
     }
+  },
+  "routing": {
+    "enabled": true,
+    "default_priority": "price",
+    "options": ["price", "fees", "speed", "liquidity", "reliability"],
+    "arbitrage_min_profit_pct": 0.1,
+    "failover_enabled": true
   },
   "logging": {
     "level": "INFO",

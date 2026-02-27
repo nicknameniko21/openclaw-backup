@@ -479,6 +479,113 @@ The system automatically creates 50+ features from price data:
 
 ---
 
+## Multi-Exchange Support (Phase 4)
+
+### Supported Exchanges
+
+| Exchange | Status | Testnet/Sandbox | Notes |
+|----------|--------|-----------------|-------|
+| Binance | ✅ Ready | ✅ Testnet | Full API support |
+| Coinbase | ✅ Ready | ✅ Sandbox | Advanced Trade API |
+| Kraken | ✅ Ready | ❌ Live only | Full API support |
+
+### Smart Order Routing
+
+The system automatically routes orders to the best exchange based on:
+
+- **Price**: Best execution price (lowest ask for buys, highest bid for sells)
+- **Fees**: Lowest trading fees
+- **Speed**: Lowest latency
+- **Liquidity**: Highest volume
+- **Reliability**: Historical uptime
+
+### Configuration
+
+```json
+{
+  "exchanges": {
+    "binance": {
+      "enabled": true,
+      "testnet": true,
+      "priority": 1
+    },
+    "coinbase": {
+      "enabled": false,
+      "sandbox": true,
+      "priority": 2
+    },
+    "kraken": {
+      "enabled": false,
+      "priority": 3
+    }
+  },
+  "routing": {
+    "enabled": true,
+    "default_priority": "price",
+    "arbitrage_min_profit_pct": 0.1,
+    "failover_enabled": true
+  }
+}
+```
+
+### API Keys
+
+```bash
+# Binance
+export BINANCE_API_KEY="your_key"
+export BINANCE_SECRET="your_secret"
+
+# Coinbase
+export COINBASE_API_KEY="your_key"
+export COINBASE_SECRET="your_secret"
+export COINBASE_PASSPHRASE="your_passphrase"
+
+# Kraken
+export KRAKEN_API_KEY="your_key"
+export KRAKEN_SECRET="your_secret"
+```
+
+### Usage
+
+```python
+from apex.execution.manager import ExchangeManager
+
+# Initialize with multiple exchanges
+manager = ExchangeManager(config)
+manager.initialize()
+
+# Smart routing - automatically picks best exchange
+order = Order(symbol="BTC/USDT", side=OrderSide.BUY, ...)
+executed = manager.place_order(order, use_smart_routing=True)
+
+# Get best price across all exchanges
+best = manager.get_best_price("BTC/USDT", OrderSide.BUY)
+print(f"Best price: ${best['best_price']} on {best['best_exchange']}")
+
+# Find arbitrage opportunities
+arbitrage = manager.get_arbitrage_opportunities("BTC/USDT", min_profit_percent=0.1)
+```
+
+### Arbitrage Detection
+
+The system continuously monitors for price differences across exchanges:
+
+```python
+# Find opportunities with >0.1% profit after fees
+opportunities = manager.get_arbitrage_opportunities("BTC/USDT", 0.1)
+
+# Returns:
+# [{
+#   'buy_exchange': 'Kraken',
+#   'sell_exchange': 'Binance',
+#   'buy_price': 65000.00,
+#   'sell_price': 65150.00,
+#   'net_profit_pct': 0.15
+# }]
+```
+
+---
+
 *Created: February 26, 2026*
 *For: Rhuam - The Shirtless Men Army*
 *Status: Phase 3 Complete - ML Capabilities Added*

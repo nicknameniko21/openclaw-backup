@@ -1,6 +1,6 @@
 """
-Binance Exchange Connector
-Handles all Binance API interactions using the standardized interface.
+Kraken Exchange Connector
+Handles all Kraken API interactions.
 """
 
 import os
@@ -14,79 +14,62 @@ from .base import (
     Balance, Ticker, ExchangeFees
 )
 
-# Try to import ccxt, handle if not installed
+# Try to import ccxt
 try:
     import ccxt
     CCXT_AVAILABLE = True
 except ImportError:
     CCXT_AVAILABLE = False
-    logging.warning("ccxt not installed. Binance connector will use mock mode.")
 
 
-class BinanceConnector(BaseExchange):
+class KrakenConnector(BaseExchange):
     """
-    Binance exchange connector using CCXT library.
+    Kraken exchange connector.
     Implements the standardized BaseExchange interface.
     """
     
-    def __init__(self, api_key: str = None, secret: str = None, 
-                 testnet: bool = True):
-        super().__init__("Binance", api_key, secret, testnet)
+    def __init__(self, api_key: str = None, secret: str = None):
+        super().__init__("Kraken", api_key, secret)
         self.exchange = None
         
     def connect(self) -> bool:
-        """Connect to Binance API"""
+        """Connect to Kraken API"""
         if not CCXT_AVAILABLE:
             logging.warning("CCXT not available, using mock mode")
             return self._connect_mock()
         
         try:
-            api_key = self.api_key or os.getenv('BINANCE_API_KEY')
-            secret = self.secret or os.getenv('BINANCE_SECRET')
+            api_key = self.api_key or os.getenv('KRAKEN_API_KEY')
+            secret = self.secret or os.getenv('KRAKEN_SECRET')
             
             config = {
                 'apiKey': api_key,
                 'secret': secret,
                 'enableRateLimit': True,
-                'options': {
-                    'defaultType': 'spot',
-                }
             }
             
-            if self.testnet:
-                config['sandbox'] = True
-                # Use testnet URLs
-                config['urls'] = {
-                    'api': {
-                        'public': 'https://testnet.binance.vision/api',
-                        'private': 'https://testnet.binance.vision/api',
-                    }
-                }
-            
-            self.exchange = ccxt.binance(config)
-            
-            # Test connection
+            self.exchange = ccxt.kraken(config)
             self.exchange.load_markets()
             self._connected = True
-            logging.info(f"Connected to Binance {'testnet' if self.testnet else 'live'}")
+            logging.info("Connected to Kraken")
             return True
             
         except Exception as e:
-            logging.error(f"Failed to connect to Binance: {e}")
+            logging.error(f"Failed to connect to Kraken: {e}")
             return self._connect_mock()
     
     def _connect_mock(self) -> bool:
         """Fallback to mock mode"""
         from .base import MockExchange
-        self._mock = MockExchange("Binance")
+        self._mock = MockExchange("Kraken")
         self._mock.connect()
         self._connected = True
         self._using_mock = True
-        logging.info("Binance using mock mode")
+        logging.info("Kraken using mock mode")
         return True
     
     def disconnect(self) -> bool:
-        """Disconnect from Binance"""
+        """Disconnect from Kraken"""
         self.exchange = None
         self._connected = False
         return True
@@ -141,29 +124,20 @@ class BinanceConnector(BaseExchange):
             logging.error(f"Error fetching ticker: {e}")
             raise
     
-    def get_ohlcv(self, symbol: str, timeframe: str = '1h', 
+    def get_ohlcv(self, symbol: str, timeframe: str = '1h',
                   limit: int = 100) -> pd.DataFrame:
         """Get OHLCV data"""
         if hasattr(self, '_using_mock') and self._using_mock:
             return self._mock.get_ohlcv(symbol, timeframe, limit)
         
         try:
-            # Convert timeframe to ccxt format
-            tf_map = {
-                '1m': '1m', '5m': '5m', '15m': '15m',
-                '1h': '1h', '4h': '4h', '1d': '1d'
-            }
-            ccxt_tf = tf_map.get(timeframe, '1h')
-            
-            ohlcv = self.exchange.fetch_ohlcv(symbol, ccxt_tf, limit=limit)
-            
+            ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
             df = pd.DataFrame(
-                ohlcv, 
+                ohlcv,
                 columns=['timestamp', 'open', 'high', 'low', 'close', 'volume']
             )
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             return df
-            
         except Exception as e:
             logging.error(f"Error fetching OHLCV: {e}")
             raise
@@ -174,33 +148,24 @@ class BinanceConnector(BaseExchange):
             return self._mock.place_order(order)
         
         try:
-            # Convert order type
             type_map = {
                 OrderType.MARKET: 'market',
                 OrderType.LIMIT: 'limit',
-                OrderType.STOP_LOSS: 'stop_loss',
-                OrderType.STOP_LIMIT: 'stop_limit'
             }
             order_type = type_map.get(order.order_type, 'market')
             side = 'buy' if order.side == OrderSide.BUY else 'sell'
-            
-            params = {}
-            if order.stop_price:
-                params['stopPrice'] = order.stop_price
             
             result = self.exchange.create_order(
                 order.symbol,
                 order_type,
                 side,
                 order.amount,
-                order.price,
-                params
+                order.price
             )
             
             order.order_id = result['id']
             order.status = OrderStatus.OPEN
             order.exchange = self.name
-            
             return order
             
         except Exception as e:
@@ -227,7 +192,6 @@ class BinanceConnector(BaseExchange):
         
         try:
             result = self.exchange.fetch_order(order_id, symbol)
-            
             status_map = {
                 'open': OrderStatus.OPEN,
                 'closed': OrderStatus.CLOSED,
@@ -237,17 +201,15 @@ class BinanceConnector(BaseExchange):
             return Order(
                 symbol=symbol,
                 side=OrderSide.BUY if result['side'] == 'buy' else OrderSide.SELL,
-                order_type=OrderType.MARKET,  # Simplified
+                order_type=OrderType.MARKET,
                 amount=result['amount'],
                 price=result['price'],
                 order_id=result['id'],
                 status=status_map.get(result['status'], OrderStatus.PENDING),
                 filled_amount=result['filled'],
-                average_price=result.get('average', 0),
                 timestamp=datetime.fromtimestamp(result['timestamp'] / 1000),
                 exchange=self.name
             )
-            
         except Exception as e:
             logging.error(f"Error fetching order: {e}")
             return None
@@ -265,7 +227,7 @@ class BinanceConnector(BaseExchange):
             return []
     
     def _convert_ccxt_order(self, data: dict) -> Order:
-        """Convert ccxt order format to Order object"""
+        """Convert ccxt order to Order object"""
         status_map = {
             'open': OrderStatus.OPEN,
             'closed': OrderStatus.CLOSED,
@@ -275,13 +237,12 @@ class BinanceConnector(BaseExchange):
         return Order(
             symbol=data['symbol'],
             side=OrderSide.BUY if data['side'] == 'buy' else OrderSide.SELL,
-            order_type=OrderType.MARKET,  # Simplified
+            order_type=OrderType.MARKET,
             amount=data['amount'],
             price=data['price'],
             order_id=data['id'],
             status=status_map.get(data['status'], OrderStatus.PENDING),
             filled_amount=data['filled'],
-            average_price=data.get('average', 0),
             timestamp=datetime.fromtimestamp(data['timestamp'] / 1000),
             exchange=self.name
         )
@@ -291,20 +252,12 @@ class BinanceConnector(BaseExchange):
         if hasattr(self, '_using_mock') and self._using_mock:
             return self._mock.get_fees()
         
-        try:
-            # Default Binance fees (VIP 0)
-            return ExchangeFees(
-                maker=0.001,  # 0.1%
-                taker=0.001,  # 0.1%
-                withdrawal={
-                    'BTC': 0.0005,
-                    'ETH': 0.005,
-                    'USDT': 1.0
-                }
-            )
-        except Exception as e:
-            logging.error(f"Error fetching fees: {e}")
-            return ExchangeFees(maker=0.001, taker=0.001, withdrawal={})
+        # Kraken default fees
+        return ExchangeFees(
+            maker=0.0016,  # 0.16%
+            taker=0.0026,  # 0.26%
+            withdrawal={'BTC': 0.0005, 'ETH': 0.005}
+        )
     
     def get_symbols(self) -> List[str]:
         """Get available trading pairs"""

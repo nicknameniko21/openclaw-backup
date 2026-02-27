@@ -1,7 +1,6 @@
-#!/bin/bash
 #
-# AI Identity Pro - Docker Compose Configuration
-# Full stack deployment with SSL, database, and caching
+# AI Identity Pro - Production Docker Compose Configuration
+# Full stack deployment with SSL, database, caching, and vector search
 #
 
 version: '3.8'

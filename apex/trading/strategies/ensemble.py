@@ -4,6 +4,7 @@ Combines multiple strategies for consensus-based trading.
 """
 
 from typing import List, Dict
+import logging
 import pandas as pd
 from datetime import datetime
 
@@ -27,6 +28,7 @@ class StrategyEnsemble(BaseStrategy):
     
     def __init__(self, config: Dict):
         super().__init__(config)
+        self.logger = logging.getLogger(__name__)
         
         # Initialize component strategies
         self.strategies: List[BaseStrategy] = []

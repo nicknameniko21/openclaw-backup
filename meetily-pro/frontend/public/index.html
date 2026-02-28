@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meetily Pro - Enterprise Meeting Intelligence</title>
+    <!-- Plausible Analytics -->
+    <script defer data-domain="47.84.124.238:8080" src="https://plausible.io/js/script.js"></script>
+    <!-- Custom Event Tracking -->
+    <script>
+        window.trackEvent = function(event, props) {
+            if (window.plausible) plausible(event, { props: props });
+            console.log('[Analytics]', event, props);
+        };
+    </script>
     <style>
         * {
             margin: 0;
@@ -618,8 +627,8 @@
                 <p>Privacy-first AI meeting assistant for law firms, healthcare, and enterprises. Keep your sensitive conversations on your infrastructure.</p>
                 
                 <div class="hero-buttons">
-                    <a href="#" class="btn btn-primary btn-large">Start Free Trial →</a>
-                    <a href="#" class="btn btn-outline btn-large">Schedule Demo</a>
+                    <a href="#" class="btn btn-primary btn-large" onclick="trackEvent('cta_click', {location: 'hero', text: 'Start Free Trial'})">Start Free Trial →</a>
+                    <a href="#" class="btn btn-outline btn-large" onclick="trackEvent('cta_click', {location: 'hero', text: 'Schedule Demo'})">Schedule Demo</a>
                 </div>
                 
                 <div class="trust-badges">

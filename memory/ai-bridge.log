@@ -1,0 +1,4 @@
+[2026-03-01 19:58:12] AI Bridge File Watcher started
+[2026-03-01 19:58:12] Watching: /root/.openclaw/workspace/ai-outputs
+[2026-03-01 19:58:12] Initial scan complete. Running inotifywait for new files...
+[2026-03-01 19:58:12] inotifywait not available, using polling

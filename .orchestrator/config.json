@@ -1,0 +1,60 @@
+{
+  "platforms": {
+    "github": {
+      "enabled": true,
+      "priority": 1,
+      "limits": {"minutes_per_month": 2000, "current_usage": 0},
+      "tasks": ["orchestration", "backup", "light_jobs"]
+    },
+    "vercel": {
+      "enabled": false,
+      "priority": 2,
+      "limits": {"gb_per_month": 100, "current_usage": 0},
+      "tasks": ["serverless", "webhooks", "api_endpoints"],
+      "token": ""
+    },
+    "colab": {
+      "enabled": false,
+      "priority": 3,
+      "limits": {"hours_per_session": 12, "sessions_per_day": 2},
+      "tasks": ["ml_training", "browser_automation", "heavy_compute"],
+      "notebook_url": ""
+    },
+    "azure": {
+      "enabled": false,
+      "priority": 4,
+      "limits": {"credit_remaining": 200},
+      "tasks": ["persistent_compute", "databases", "storage"],
+      "credentials": {}
+    },
+    "aws": {
+      "enabled": false,
+      "priority": 5,
+      "limits": {"free_tier_hours": 750},
+      "tasks": ["ec2_instances", "lambda", "s3_storage"],
+      "credentials": {}
+    },
+    "oracle": {
+      "enabled": false,
+      "priority": 6,
+      "limits": {"always_free_vms": 2},
+      "tasks": ["unlimited_compute", "persistent_workers"],
+      "credentials": {}
+    },
+    "local": {
+      "enabled": false,
+      "priority": 0,
+      "limits": {"unlimited": true},
+      "tasks": ["fallback", "high_frequency", "no_limit_work"],
+      "endpoints": []
+    }
+  },
+  "task_routing": {
+    "microsoft_rewards": ["colab", "local", "azure"],
+    "apex_trading": ["github", "vercel", "aws"],
+    "sub_agents": ["oracle", "aws", "local"],
+    "ai_bridge": ["vercel", "github", "local"],
+    "file_backup": ["github", "aws_s3"],
+    "ml_training": ["colab", "azure", "local"]
+  }
+}

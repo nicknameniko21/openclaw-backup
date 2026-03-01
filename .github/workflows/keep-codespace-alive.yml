@@ -1,0 +1,58 @@
+name: Keep Codespace Alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Every 10 minutes
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup GitHub CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install GH CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Check Codespace status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # List codespaces for this repo
+          gh codespace list --repo ${{ github.repository }} --json name,state,gitStatus
+          
+          # Check if any are running
+          RUNNING=$(gh codespace list --repo ${{ github.repository }} --json state --jq '.[] | select(.state == "Available") | .state' | wc -l)
+          
+          if [ "$RUNNING" -eq 0 ]; then
+            echo "No running Codespaces. Creating one..."
+            gh codespace create --repo ${{ github.repository }} --branch main --machine basicLinux32gb
+          else
+            echo "Codespace is running. Sending keep-alive..."
+            # Codespace will auto-keep-alive via its internal cron
+          fi
+
+      - name: Trigger automation in Codespace
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CODESPACE_NAME=$(gh codespace list --repo ${{ github.repository }} --json name --jq '.[0].name')
+          if [ -n "$CODESPACE_NAME" ]; then
+            echo "Connecting to $CODESPACE_NAME..."
+            # Execute command in codespace
+            gh codespace exec -c "$CODESPACE_NAME" -- bash -c "
+              cd /workspaces/openclaw-backup
+              echo 'Automation check: $(date)' >> memory/codespace-activity.log
+              git add memory/ && git commit -m 'Codespace activity: $(date)' && git push || true
+            "
+          fi

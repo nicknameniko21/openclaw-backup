@@ -1,0 +1,66 @@
+name: Spawn Sub-Agents
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Task description'
+        required: true
+        default: 'general work'
+      count:
+        description: 'Number of agents'
+        required: true
+        default: '3'
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  spawn:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        agent: [1, 2, 3]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create task file
+        run: |
+          TASK="${{ github.event.inputs.task || 'Check for pending work in ai-outputs and execute' }}"
+          AGENT_ID="subagent-${{ matrix.agent }}-$(date +%s)"
+          
+          cat > "ai-outputs/task-${AGENT_ID}.txt" << EOF
+TASK: $TASK
+AGENT_ID: $AGENT_ID
+START_TIME: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+STATUS: pending
+INSTRUCTIONS:
+1. Read ai-outputs/ for work assignments
+2. Execute assigned task
+3. Log all actions
+4. Report completion
+5. If blocked, escalate
+
+OUTPUT: ai-outputs/completed-${AGENT_ID}.txt
+EOF
+
+      - name: Commit task
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add ai-outputs/
+          git diff --quiet && git diff --staged --quiet || git commit -m "Spawn sub-agent: ${{ matrix.agent }}"
+          git push
+
+      - name: Execute task (simulated)
+        run: |
+          echo "Sub-agent ${{ matrix.agent }} would execute task here"
+          echo "In full implementation, this would call OpenClaw API or external agent"
+
+      - name: Mark complete
+        run: |
+          AGENT_ID="subagent-${{ matrix.agent }}-$(date +%s)"
+          echo "COMPLETED: $(date)" > "ai-outputs/completed-${AGENT_ID}.txt"
+          git add ai-outputs/
+          git commit -m "Complete: $AGENT_ID" || true
+          git push

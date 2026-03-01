@@ -1,0 +1,61 @@
+name: Microsoft Rewards Automation
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  rewards-daily:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install selenium requests
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+
+      - name: Check accounts
+        id: check
+        run: |
+          if [ -f rewards/accounts.json ]; then
+            VALID_ACCOUNTS=$(jq '[.accounts[] | select(.email | contains("example.com") | not)] | length' rewards/accounts.json)
+            echo "valid_accounts=$VALID_ACCOUNTS" >> $GITHUB_OUTPUT
+          else
+            echo "valid_accounts=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run rewards bot (if accounts exist)
+        if: steps.check.outputs.valid_accounts > 0
+        env:
+          DISPLAY: :99
+        run: |
+          cd rewards
+          python rewards_bot.py
+
+      - name: Create accounts (if none exist)
+        if: steps.check.outputs.valid_accounts == 0
+        run: |
+          echo "No valid accounts. Waiting for phone numbers..."
+          # TODO: Integrate with SMS service API
+          # TODO: Create accounts automatically
+
+      - name: Log results
+        run: |
+          echo "$(date): Rewards run completed" >> memory/rewards-cron.log
+
+      - name: Commit log
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add memory/rewards-cron.log
+          git diff --quiet && git diff --staged --quiet || git commit -m "Rewards daily run: $(date)"
+          git push

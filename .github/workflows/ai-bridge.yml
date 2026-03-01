@@ -1,0 +1,70 @@
+name: AI Bridge Router
+
+on:
+  push:
+    paths:
+      - 'ai-outputs/**'
+  workflow_dispatch:
+
+jobs:
+  route-signals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Process AI outputs
+        run: |
+          echo "Processing AI outputs..."
+          
+          for file in ai-outputs/*.txt ai-outputs/*.md; do
+            [ -f "$file" ] || continue
+            
+            echo "Processing: $file"
+            content=$(cat "$file")
+            
+            # Check for triggers
+            if echo "$content" | grep -qiE "@kimi|→kimi|ask kimi"; then
+              echo "Routing to Kimi: $file"
+              mkdir -p ai-outputs/kimi-inbox
+              cp "$file" ai-outputs/kimi-inbox/
+            fi
+            
+            if echo "$content" | grep -qiE "@claude|→claude|ask claude"; then
+              echo "Routing to Claude: $file"
+              mkdir -p ai-outputs/claude-inbox
+              cp "$file" ai-outputs/claude-inbox/
+            fi
+            
+            if echo "$content" | grep -qiE "@gemini|→gemini|ask gemini"; then
+              echo "Routing to Gemini: $file"
+              mkdir -p ai-outputs/gemini-inbox
+              cp "$file" ai-outputs/gemini-inbox/
+            fi
+            
+            if echo "$content" | grep -qiE "/consensus|@all|→all"; then
+              echo "Consensus request: $file"
+              mkdir -p ai-outputs/consensus
+              cp "$file" ai-outputs/consensus/
+            fi
+          done
+
+      - name: Commit routing
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add ai-outputs/
+          git diff --quiet && git diff --staged --quiet || git commit -m "AI Bridge: Route signals $(date)"
+          git push
+
+      - name: Trigger sub-agents (if work detected)
+        if: hashFiles('ai-outputs/**/task-*.txt') != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'spawn-subagents.yml',
+              ref: 'main'
+            })

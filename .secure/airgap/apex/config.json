@@ -1,0 +1,120 @@
+{
+  "risk_management": {
+    "risk_level": "moderate",
+    "max_position_size": 0.1,
+    "stop_loss_percent": 0.02,
+    "take_profit_percent": 0.05,
+    "max_daily_loss": 0.05
+  },
+  "strategies": {
+    "breakout": {
+      "enabled": true,
+      "timeframe": "1h",
+      "symbols": ["BTC/USDT", "ETH/USDT"],
+      "lookback": 20,
+      "volume_confirm": true,
+      "min_breakout_percent": 0.01
+    },
+    "mean_reversion": {
+      "enabled": true,
+      "timeframe": "15m",
+      "symbols": ["BTC/USDT", "ETH/USDT"],
+      "rsi_period": 14,
+      "oversold": 30,
+      "overbought": 70
+    },
+    "trend_following": {
+      "enabled": true,
+      "timeframe": "4h",
+      "symbols": ["BTC/USDT", "ETH/USDT"],
+      "fast_ema_period": 50,
+      "slow_ema_period": 200,
+      "adx_threshold": 25,
+      "adx_exit_threshold": 20,
+      "pullback_threshold": 0.02
+    },
+    "multi_timeframe": {
+      "enabled": false,
+      "timeframes": ["4h", "1h", "15m"],
+      "symbols": ["BTC/USDT", "ETH/USDT"],
+      "ema_period": 20,
+      "rsi_period": 14,
+      "rsi_oversold": 30,
+      "rsi_overbought": 70
+    },
+    "ensemble": {
+      "enabled": false,
+      "timeframe": "1h",
+      "symbols": ["BTC/USDT", "ETH/USDT"],
+      "min_consensus": 2,
+      "breakout": {
+        "enabled": true,
+        "lookback": 20,
+        "volume_confirm": true,
+        "min_breakout_percent": 0.01
+      },
+      "mean_reversion": {
+        "enabled": true,
+        "rsi_period": 14,
+        "oversold": 30,
+        "overbought": 70
+      },
+      "trend_following": {
+        "enabled": true,
+        "fast_ema_period": 50,
+        "slow_ema_period": 200,
+        "adx_threshold": 25
+      }
+    },
+    "ml": {
+      "enabled": false,
+      "timeframe": "1h",
+      "symbols": ["BTC/USDT", "ETH/USDT"],
+      "min_confidence": 0.55,
+      "prediction_threshold": 0.6,
+      "n_estimators": 100,
+      "max_depth": 10,
+      "use_regime_filter": true,
+      "use_anomaly_filter": true,
+      "regime_preference": "trending",
+      "prediction_horizon": 5,
+      "return_threshold": 0.01,
+      "training_data_size": 500
+    }
+  },
+  "exchanges": {
+    "binance": {
+      "enabled": true,
+      "testnet": true,
+      "rate_limit": true,
+      "priority": 1
+    },
+    "coinbase": {
+      "enabled": false,
+      "sandbox": true,
+      "priority": 2
+    },
+    "kraken": {
+      "enabled": false,
+      "priority": 3
+    }
+  },
+  "routing": {
+    "enabled": true,
+    "default_priority": "price",
+    "options": ["price", "fees", "speed", "liquidity", "reliability"],
+    "arbitrage_min_profit_pct": 0.1,
+    "failover_enabled": true
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "apex/logs/trading.log",
+    "max_size_mb": 100,
+    "backup_count": 5
+  },
+  "backtest": {
+    "initial_capital": 10000,
+    "commission": 0.001,
+    "slippage": 0.001
+  }
+}

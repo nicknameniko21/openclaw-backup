@@ -98,7 +98,8 @@ def main():
     accounts_file = "accounts.json"
     if os.path.exists(accounts_file):
         with open(accounts_file, 'r') as f:
-            CONFIG["accounts"] = json.load(f)
+            config_data = json.load(f)
+            CONFIG["accounts"] = config_data.get("accounts", [])
     else:
         log("No accounts file found. Creating template...")
         CONFIG["accounts"] = [

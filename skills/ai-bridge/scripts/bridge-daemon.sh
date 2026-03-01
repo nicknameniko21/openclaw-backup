@@ -75,7 +75,7 @@ detect_source() {
     if echo "$content" | grep -qiE '(kimi|moonshot)'; then echo "kimi"; return; fi
     
     # Heuristics based on response patterns
-    if echo "$content" | grep -qE '^Here.*(is|are)|^I can( certainly)? (help|assist)|^I\'d be (happy|glad) to'; then echo "claude"; return; fi
+    if echo "$content" | grep -qE "^Here.*(is|are)|^I can( certainly)? (help|assist)|^I'd be (happy|glad) to"; then echo "claude"; return; fi
     if echo "$content" | grep -qiE 'gemini|bard|google.*ai'; then echo "gemini"; return; fi
     
     echo "unknown"

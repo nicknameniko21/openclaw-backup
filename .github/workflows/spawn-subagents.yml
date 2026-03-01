@@ -12,7 +12,7 @@ on:
         required: true
         default: '3'
   schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
+    - cron: '0 */3 * * *'  # Every 3 hours (8x/day)
 
 jobs:
   spawn:

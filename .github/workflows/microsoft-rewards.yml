@@ -2,7 +2,8 @@ name: Microsoft Rewards Automation
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM
+    - cron: '0 */6 * * *'  # Every 6 hours (4x/day) - spread 300 points
+    - cron: '0 1,7,13,19 * * *'  # 1AM, 7AM, 1PM, 7PM
   workflow_dispatch:  # Manual trigger
 
 jobs:

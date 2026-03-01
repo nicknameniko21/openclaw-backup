@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "name": "kimi-claw-orchestrator",
+  "builds": [
+    { "src": "api/*.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/health", "dest": "/api/health.js" },
+    { "src": "/api/trigger", "dest": "/api/trigger.js" },
+    { "src": "/api/bridge", "dest": "/api/bridge.js" },
+    { "src": "/api/signal", "dest": "/api/signal.js" }
+  ],
+  "env": {
+    "GITHUB_TOKEN": "@github-token",
+    "BANKR_API_KEY": "@bankr-api-key",
+    "SLACK_WEBHOOK": "@slack-webhook"
+  }
+}
